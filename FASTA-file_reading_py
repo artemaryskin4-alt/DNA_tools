@@ -1,0 +1,65 @@
+#Функция возврата списка позиций, где встречается мотив в последовательности.
+def find_motif(sequence, motif):
+    positions = []
+    start = 0
+    while True:
+        pos = sequence.find(motif, start)
+        if pos == -1:
+            break
+        positions.append(pos)
+        start = pos + 1
+    return positions
+
+#Удаление всех символов, не входящих в valid_bases.
+def clean_sequence(seq, valid_bases=set("ATGC")):
+    cleaned = "".join([ch for ch in seq if ch in valid_bases])
+    return cleaned
+
+#Чтение FASTA-файла, очистка последовательности от недопустимых символов.
+def parse_fasta(file_path, valid_bases=set("ATGC")):
+    sequences = []
+    with open(file_path, "r") as f:
+        header = None
+        seq = []
+        for line in f:
+            line = line.strip()
+            if line.startswith(">"):
+                if header is not None:
+                    raw_seq = "".join(seq).upper()
+                    cleaned_seq = clean_sequence(raw_seq, valid_bases)
+                    if len(raw_seq) != len(cleaned_seq):
+                        removed = set(raw_seq) - valid_bases
+                        print(f"Предупреждение: в '{header[:40]}...' удалены символы: {removed}")
+                    sequences.append((header, cleaned_seq))
+                header = line[1:]
+                seq = []
+            else:
+                seq.append(line)
+        if header is not None:
+            raw_seq = "".join(seq).upper()
+            cleaned_seq = clean_sequence(raw_seq, valid_bases)
+            if len(raw_seq) != len(cleaned_seq):
+                removed = set(raw_seq) - valid_bases
+                print(f"Предупреждение: в '{header[:40]}...' удалены символы: {removed}")
+            sequences.append((header, cleaned_seq))
+    return sequences
+
+# Основная часть
+file_path = r"C:\Users\User\Desktop\Программы для Github\ORF13_for_alignment.txt"
+motif = input("Введите мотив для поиска: ").upper()
+
+sequences = parse_fasta(file_path)
+
+print(f"Поиск мотива '{motif}' в последовательностях:\n")
+for header, seq in sequences:
+    if len(seq) == 0:
+        print(f"{header[:60]}...")
+        print("  Последовательность пуста после очистки. Пропускаем.\n")
+        continue
+    positions = find_motif(seq, motif)
+    if positions:
+        print(f"{header[:60]}...")
+        print(f"  Мотив найден на позициях: {positions}\n")
+    else:
+        print(f"{header[:60]}...")
+        print(f"  Мотив не найден.\n")
